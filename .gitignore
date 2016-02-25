@@ -1,0 +1,11 @@
+*~
+nbproject/
+pkcs11.h
+*.o
+rpkcs11server
+librpkcs11.so
+pkcs11tool
+pkcs11_clnt.c
+pkcs11_svc.c
+pkcs11_xdr.c
+pkcs11_xdr.h
