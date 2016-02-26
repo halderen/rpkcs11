@@ -33,6 +33,134 @@ pkcsproc_getinfo_1_svc(struct ck_info *result, struct svc_req *rqstp) {
 
 bool_t
 pkcsproc_getslotlist_1_svc(u_char token_present, slotlist *result, struct svc_req *rqstp) {
+    unsigned long len;
+    local->C_GetSlotList(token_present, NULL, &len);
+    result->slots.slots_val = malloc(sizeof(ck_slot_id_t) * len);
+    result->slots.slots_len = len;
+    result->result = local->C_GetSlotList(token_present, result->slots.slots_val, &len);
+    return TRUE;
+}
+
+bool_t
+pkcsproc_getslotinfo_1_svc(ck_slot_id_t slot_id, slotinfo *result,  struct svc_req *rqstp)
+{
+    result->result = local->C_GetSlotInfo(slot_id, (CK_SLOT_INFO*)result);
+    return TRUE;
+}
+
+bool_t
+pkcsproc_gettokeninfo_1_svc(ck_slot_id_t slot_id, tokeninfo *result,  struct svc_req *rqstp)
+{
+    result->result = local->C_GetTokenInfo(slot_id, (CK_TOKEN_INFO*)result);
+    return TRUE;
+}
+
+bool_t
+pkcsproc_waitforslotevent_1_svc(ck_flags_t flags, reserved arg2, slotevent *result,  struct svc_req *rqstp)
+{
+    result->result = local->C_WaitForSlotEvent(flags, NULL, (CK_SLOT_ID*)result);
+    return TRUE;
+}
+
+bool_t
+pkcsproc_getmechanismlist_1_svc(ck_slot_id_t slot_id, mechlist *result,  struct svc_req *rqstp)
+{
+    unsigned long len;
+    local->C_GetMechanismList(slot_id, NULL, &len);
+    result->mechs.mechs_val = malloc(sizeof(ck_mechanism_type_t) * len);
+    result->mechs.mechs_len = len;
+    result->result = local->C_GetMechanismList(slot_id, result->mechs.mechs_val, &len);
+    return TRUE;
+}
+
+bool_t
+pkcsproc_getmechanisminfo_1_svc(ck_slot_id_t slot_id, ck_mechanism_type_t type, mechinfo *result,  struct svc_req *rqstp)
+{
+    return TRUE;
+}
+
+bool_t
+pkcsproc_inittoken_1_svc(ck_slot_id_t slot_id, buffer pin, char *label, ck_rv_t *result,  struct svc_req *rqstp)
+{
+    return TRUE;
+}
+
+bool_t
+pkcsproc_initpin_1_svc(ck_session_handle_t session, buffer pin, ck_rv_t *result,  struct svc_req *rqstp)
+{
+    return TRUE;
+}
+
+bool_t
+pkcsproc_setpin_1_svc(ck_session_handle_t session, buffer old_pin, buffer new_pin, ck_rv_t *result,  struct svc_req *rqstp)
+{
+    return TRUE;
+}
+
+bool_t
+pkcsproc_opensession_1_svc(ck_slot_id_t slot_id, ck_flags_t flags, sessionresult *result,  struct svc_req *rqstp)
+{
+    return TRUE;
+}
+
+bool_t
+pkcsproc_closesession_1_svc(ck_session_handle_t session, ck_rv_t *result,  struct svc_req *rqstp)
+{
+    return TRUE;
+}
+
+bool_t
+pkcsproc_closeallsessions_1_svc(ck_slot_id_t slot_id, ck_rv_t *result,  struct svc_req *rqstp)
+{
+    return TRUE;
+}
+
+bool_t
+pkcsproc_getsessioninfo_1_svc(ck_session_handle_t session, sessioninfo *result,  struct svc_req *rqstp)
+{
+    return TRUE;
+}
+
+typedef unsigned char *door_unmarshal_t;
+
+void*
+door_get_ref(door_unmarshal_t* argref)
+{
+    void* location;
+    ssize_t size = *(ssize_t*)*argref;
+    *argref = &(*argref)[sizeof(ssize_t)];
+    location = *argref;
+    argref = &argref[size];
+    return location;
+}
+
+void
+door_arguments_unmarshal(door_unmarshal_t* argref, buffer arguments)
+{
+    *argref = arguments.buffer_val;
+}
+
+bool_t
+pkcsproc_door_1_svc(char* method, buffer arguments, buffer* result,  struct svc_req *rqstp)
+{
+    door_unmarshal_t argref;
+    door_arguments_unmarshal(&argref, arguments);
+    if(method == NULL || !strcmp(method,"")) {
+        result->buffer_len = 0;
+        result->buffer_val = NULL;
+        return TRUE;
+    } else if(!strcmp(method,"C_Initialize")) {
+        local->C_Initialize(NULL);
+    } else if(!strcmp(method,"C_Finalize")) {
+        local->C_Initialize(NULL);
+    } else if(!strcmp(method,"C_GetInfo")) {
+        local->C_GetInfo(door_get_ref(&argref));
+    } else {
+        return FALSE;
+    }
+    result->buffer_len = arguments.buffer_len;
+    result->buffer_val = malloc(arguments.buffer_len);
+    memcpy(result->buffer_val, arguments.buffer_val, arguments.buffer_len);
     return TRUE;
 }
 
