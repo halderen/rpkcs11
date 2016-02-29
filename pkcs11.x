@@ -139,7 +139,6 @@ struct sessioninfo
 
 typedef opaque reserved<>;
 typedef unsigned char buffer<>;
-typedef opaque arguments<>;
 
 program PKCSPROG {
         version PKCSVERS {
