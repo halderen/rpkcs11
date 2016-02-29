@@ -5,8 +5,7 @@
 #include <dlfcn.h>
 #include "pkcs11.h"
 #include "cryptoki_compat/pkcs11.h"
-
-static CK_FUNCTION_LIST_PTR local = NULL;
+#include "server.h"
 
 bool_t
 pkcsproc_null_1_svc(void *result, struct svc_req *rqstp) {
@@ -125,24 +124,4 @@ int
 pkcsprog_1_freeresult(SVCXPRT *transp, xdrproc_t xdr_result, caddr_t result) {
     xdr_free(xdr_result, result);
     return 1;
-}
-
-extern int dispatcher(void);
-
-int
-main(int argc, char **argv)
-{
-    void* handle;
-    CK_RV status;
-    CK_C_GetFunctionList getFunctionList;
-
-    handle = dlopen(argv[1], RTLD_LAZY);
-    assert(handle);
-
-    getFunctionList = dlsym(handle, "C_GetFunctionList");
-    assert(getFunctionList);
-    status = getFunctionList(&local);
-    assert(!status);
-
-    return dispatcher();
 }

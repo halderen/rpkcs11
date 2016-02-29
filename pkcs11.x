@@ -215,28 +215,3 @@ CancelFunction(ck_session_handle_t session) = 68;
 #endif
         } = 1;
 } = 200492;
-
-#ifdef RPC_SVC
-%extern int dispatcher(void);
-%void pkcsprog_1(struct svc_req *rqstp, register SVCXPRT *transp);
-%int
-%dispatcher(void)
-%{
-%    register SVCXPRT *transp;
-%    pmap_unset(PKCSPROG, PKCSVERS);
-%    if ((transp = svcudp_create(RPC_ANYSOCK)) == NULL) {
-%        return 1;
-%    }
-%    if (!svc_register(transp, PKCSPROG, PKCSVERS, pkcsprog_1, IPPROTO_UDP)) {
-%        return 2;
-%    }
-%    if ((transp = svctcp_create(RPC_ANYSOCK, 0, 0)) == NULL) {
-%        return 3;
-%    }
-%    if (!svc_register(transp, PKCSPROG, PKCSVERS, pkcsprog_1, IPPROTO_TCP)) {
-%        return 4;
-%    }
-%    svc_run();
-%    return 0;
-%}
-#endif
