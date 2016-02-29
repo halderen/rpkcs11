@@ -26,7 +26,6 @@ main(int argc, char *argv[])
     status = pkcs11->C_Initialize(NULL);
     assert(!status || status == CKR_CRYPTOKI_ALREADY_INITIALIZED);
     status = pkcs11->C_GetInfo(&info);
-    printf("%d\n",(int)status);
     assert(!status);
     printf("GetInfo:\n");
     printf("  cryptoki version       : %d.%d\n",info.cryptokiVersion.major,info.cryptokiVersion.minor);
