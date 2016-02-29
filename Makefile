@@ -9,7 +9,7 @@ all: rpkcs11server librpkcs11.so pkcs11tool
 
 clean:
 	rm -f core pkcs11.h *.o pkcs11server pkcs11tool *~
-	rm -f pkcs11_clnt.c pkcs11_svc.c pkcs11_xdr.c
+	rm -f pkcs11_clnt.c pkcs11_svc.c pkcs11_xdr.c rpkcs11server
 
 pkcs11.h: pkcs11.x
 	rpcgen -NMh $< > $@
@@ -23,11 +23,11 @@ pkcs11_clnt.c: pkcs11.x pkcs11.h
 pkcs11_svc.c: pkcs11.x pkcs11.h
 	rpcgen -NMm $< > $@
 
-rpkcs11server: pkcs11_svc.o pkcs11_xdr.o server.o
+rpkcs11server: pkcs11_svc.o pkcs11_xdr.o rpcserver.o
 	$(LINK.c) -o $@ $^ $(LDLIBS)
 
 pkcs11tool: pkcs11tool.c
 	$(LINK.c) -o $@ $^ $(LDLIBS)
 
-librpkcs11.so:	pkcs11_clnt.o pkcs11_xdr.o library.o
+librpkcs11.so:	pkcs11_clnt.o pkcs11_xdr.o rpclibrary.o
 	$(LINK.c) -o $@ $^ -shared

@@ -139,7 +139,6 @@ struct sessioninfo
 
 typedef opaque reserved<>;
 typedef unsigned char buffer<>;
-typedef opaque arguments<>;
 
 program PKCSPROG {
         version PKCSVERS {
@@ -214,6 +213,7 @@ GenerateRandom(ck_session_handle_t session, unsigned char *random_data, unsigned
 GetFunctionStatus(ck_session_handle_t session) = 67;
 CancelFunction(ck_session_handle_t session) = 68;
 #endif
+            buffer PKCSPROC_DOOR(string method, buffer arguments) = 99;
         } = 1;
 } = 200492;
 
