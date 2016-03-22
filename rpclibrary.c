@@ -52,6 +52,8 @@ GetSlotList(unsigned char token_present, CK_SLOT_ID *slot_list, unsigned long *c
 {
     enum clnt_stat retval;
     struct slotlist result;
+    if(slot_list == NULL)
+        *count = 0;
     if ((retval = pkcsproc_getslotlist_1(token_present, *count, &result, clnt)) == RPC_SUCCESS) {
         if(slot_list) {
             if(*count < result.slots.slots_len/sizeof(CK_SLOT_ID))
