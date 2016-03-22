@@ -6,13 +6,10 @@
 #include <rpc/rpc.h>
 #include <rpc/pmap_clnt.h>
 #include "pkcs11.h"
-#include "doorrpc.h"
 #include "server.h"
-#include "door.h"
 
 CK_FUNCTION_LIST_PTR local = NULL;
 
-extern void doorrpcprog_1(struct svc_req *rqstp, register SVCXPRT *transp);
 extern void pkcsprog_1(struct svc_req *rqstp, register SVCXPRT *transp);
 
 int
@@ -26,25 +23,16 @@ main(int argc, char **argv)
     handle = dlopen(argv[1], RTLD_LAZY);
     assert(handle);
 
-    door_initialize();
-
     getFunctionList = dlsym(handle, "C_GetFunctionList");
     assert(getFunctionList);
     status = getFunctionList(&local);
     assert(!status);
 
-    pmap_unset(DOORRPCPROG, DOORRPCVERS);
     if ((transp = svcudp_create(RPC_ANYSOCK)) == NULL) {
         return 1;
     }
-    if (!svc_register(transp, DOORRPCPROG, DOORRPCVERS, doorrpcprog_1, IPPROTO_UDP)) {
-        return 2;
-    }
     if ((transp = svctcp_create(RPC_ANYSOCK, 0, 0)) == NULL) {
-        return 3;
-    }
-    if (!svc_register(transp, DOORRPCPROG, DOORRPCVERS, doorrpcprog_1, IPPROTO_TCP)) {
-        return 4;
+        return 2;
     }
 
     pmap_unset(PKCSPROG, PKCSVERS);
