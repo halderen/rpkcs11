@@ -40,7 +40,11 @@ pkcsproc_getslotlist_1_svc(u_char token_present, unsigned long maxcount, slotlis
     result->slots.slots_len = sizeof(unsigned long)*maxcount;
     result->slots.slots_val = malloc(result->slots.slots_len);
     result->actualcount = maxcount;
-    result->result = local->C_GetSlotList(token_present, (CK_SLOT_ID*)result->slots.slots_val, &result->actualcount);
+    if(maxcount == 0) {
+        result->result = local->C_GetSlotList(token_present, NULL, &result->actualcount);
+    } else {
+        result->result = local->C_GetSlotList(token_present, (CK_SLOT_ID*)result->slots.slots_val, &result->actualcount);
+    }
     return TRUE;
 }
 
