@@ -1,50 +1,115 @@
-typedef unsigned long ck_rv_t;
-typedef unsigned long ck_flags_t;
-typedef unsigned long ck_notification_t;
-typedef unsigned long ck_slot_id_t;
-typedef unsigned long ck_session_handle_t;
-typedef unsigned long ck_user_type_t;
-typedef unsigned long ck_state_t;
-typedef unsigned long ck_object_handle_t;
-typedef unsigned long ck_object_class_t;
-typedef unsigned long ck_hw_feature_type_t;
-typedef unsigned long ck_key_type_t;
-typedef unsigned long ck_certificate_type_t;
-typedef unsigned long ck_attribute_type_t;
-typedef unsigned long ck_mechanism_type_t;
+#ifdef RPC_HDR
+%#include <stdlib.h>
+%#include "cryptoki_compat/pkcs11.h"
+%typedef struct { CK_ATTRIBUTE* attr; unsigned long count; } attributes;
+%void returnattributes(CK_ATTRIBUTE* templ, unsigned long count, attributes attrs);
+%void duplicateattributes(attributes* dest, attributes attrs);
+#endif
 
-struct ck_version
+#ifdef RPC_XDR
+%bool_t
+%xdr_attributes(XDR* xdrs, attributes* attrs)
+%{
+%    unsigned long i;
+%    bool_t nullptr;
+%
+%    xdr_u_long(xdrs, &attrs->count);
+%    if(xdrs->x_op == XDR_DECODE) {
+%        if((attrs->attr = malloc(sizeof(CK_ATTRIBUTE) * attrs->count)) == NULL) {
+%            return FALSE;
+%        }
+%    }
+%    for(i=0; i<attrs->count; i++) {
+%        if(!xdr_u_long(xdrs, &attrs->attr[i].type)) {
+%            return FALSE;
+%        }
+%        if(xdrs->x_op == XDR_ENCODE) {
+%            nullptr = (attrs->attr[i].pValue == NULL);
+%        }
+%        if(!xdr_bool(xdrs, &nullptr)) {
+%            return FALSE;
+%        }
+%        if(!xdr_u_long(xdrs, &attrs->attr[i].ulValueLen)) {
+%            return FALSE;
+%        }
+%        if(!nullptr) {
+%            if(xdrs->x_op == XDR_DECODE) {
+%                attrs->attr[i].pValue = malloc(attrs->attr[i].ulValueLen);
+%             } else if(xdrs->x_op == XDR_FREE) {
+%                free(attrs->attr[i].pValue);
+%             }
+%            if(!xdr_opaque(xdrs, attrs->attr[i].pValue, attrs->attr[i].ulValueLen)) {
+%                    return FALSE;
+%            }
+%        } else
+%            attrs->attr[i].pValue = NULL;
+%    }
+%    return TRUE;
+%}
+%
+%void
+%returnattributes(CK_ATTRIBUTE* templ, unsigned long count, attributes attrs)
+%{
+%    unsigned long i;
+%    size_t size;
+%    if(attrs.count < count)
+%        count = attrs.count;
+%    for(i=0; i<count; i++) {
+%        if(templ[i].pValue != NULL) {
+%            size = (templ[i].ulValueLen < attrs.attr[i].ulValueLen ? templ[i].ulValueLen : attrs.attr[i].ulValueLen);
+%            memcpy(templ[i].pValue, attrs.attr[i].pValue, size);
+%        }
+%        templ[i].ulValueLen = attrs.attr[i].ulValueLen;
+%    }
+%}
+%void duplicateattributes(attributes* dest, attributes attrs)
+%{
+%    unsigned long i;
+%    dest->count = attrs.count;
+%    dest->attr = malloc(sizeof(CK_ATTRIBUTE) * attrs.count);
+%    for(i=0; i<attrs.count; i++) {
+%        dest->attr[i] = attrs.attr[i];
+%        if(attrs.attr[i].pValue) {
+%            dest->attr[i].pValue = malloc(attrs.attr[i].ulValueLen);
+%            memcpy(dest->attr[i].pValue, attrs.attr[i].pValue, attrs.attr[i].ulValueLen);
+%        }
+%    }
+%}
+#endif
+
+struct versioninfo
 {
   unsigned char major;
   unsigned char minor;
 };
 
-struct ck_info
+struct info
 {
-  struct ck_version cryptoki_version;
+  struct versioninfo cryptoki_version;
   unsigned char manufacturer_id[32];
-  ck_flags_t flags;
+  unsigned long flags;
   unsigned char library_description[32];
-  struct ck_version library_version;
-  ck_rv_t result;
+  struct versioninfo library_version;
+  unsigned long result;
 };
 
-struct ck_slot_info
+struct slot_info
 {
   unsigned char slot_description[64];
   unsigned char manufacturer_id[32];
-  ck_flags_t flags;
-  struct ck_version hardware_version;
-  struct ck_version firmware_version;
+  unsigned long flags;
+  struct versioninfo hardware_version;
+  struct versioninfo firmware_version;
+  unsigned long result;
 };
 
-struct ck_token_info
+struct token_info
 {
   unsigned char label[32];
   unsigned char manufacturer_id[32];
   unsigned char model[16];
   unsigned char serial_number[16];
-  ck_flags_t flags;
+  unsigned long flags;
   unsigned long max_session_count;
   unsigned long session_count;
   unsigned long max_rw_session_count;
@@ -55,163 +120,121 @@ struct ck_token_info
   unsigned long free_public_memory;
   unsigned long total_private_memory;
   unsigned long free_private_memory;
-  struct ck_version hardware_version;
-  struct ck_version firmware_version;
+  struct versioninfo hardware_version;
+  struct versioninfo firmware_version;
   unsigned char utc_time[16];
+  unsigned long result;
 };
 
-struct ck_session_info
+struct session_info
 {
-  ck_slot_id_t slot_id;
-  ck_state_t state;
-  ck_flags_t flags;
+  unsigned long slot_id;
+  unsigned long state;
+  unsigned long flags;
   unsigned long device_error;
+  unsigned long result;
 };
 
-struct ck_attribute
+struct attributesresult
 {
-  ck_attribute_type_t type;
-  opaque value<>;
-  unsigned long value_len;
+    attributes template;
+    int actualcount;
+    unsigned long result;
 };
 
-struct ck_date
+struct date
 {
   unsigned char year[4];
   unsigned char month[2];
   unsigned char day[2];
 };
 
-struct ck_mechanism
+struct mechanism
 {
-  ck_mechanism_type_t mechanism;
+  unsigned long mechanism;
   opaque parameter<>;
-  unsigned long parameter_len;
-};
-
-struct ck_mechanism_info
-{
-  unsigned long min_key_size;
-  unsigned long max_key_size;
-  ck_flags_t flags;
 };
 
 struct slotlist
 {
-    ck_slot_id_t slots<>;
-    ck_rv_t result;
-};
-struct slotinfo
-{
-    ck_slot_info info;
-    ck_rv_t result;
-};
-struct tokeninfo
-{
-    ck_token_info info;
-    ck_rv_t result;
-};
-struct slotevent
-{
-    ck_slot_id_t slot;
-    ck_rv_t result;
-};
-struct mechlist
-{
-    ck_mechanism_type_t mechs<>;
-    ck_rv_t result;
-};
-struct mechinfo
-{
-    struct ck_mechanism_info info;
-    ck_rv_t result;
+    unsigned long slots<>;
+    unsigned long actualcount;
+    unsigned long result;
 };
 struct sessionresult
 {
-    ck_session_handle_t session;
-    ck_rv_t result;
-};
-struct sessioninfo
-{
-    struct ck_session_info info;
-    ck_rv_t result;
+    unsigned long session;
+    unsigned long result;
 };
 
-typedef opaque reserved<>;
-typedef unsigned char buffer<>;
+struct objectsresult
+{
+    unsigned long objects<>;
+    unsigned long actualcount;
+    unsigned long result;
+};
+
+struct digestresult
+{
+    opaque digest<>;
+    unsigned long actuallen;
+    unsigned long result;
+};
+
+struct keyresult
+{
+    unsigned long key;
+    unsigned long result;
+};
+
+struct keypairresult
+{
+    unsigned long public_key;
+    unsigned long private_key;
+    unsigned long result;
+};
+
+struct dataresult
+{
+    opaque data<>;
+    unsigned long actuallen;
+    unsigned long result;
+};
+
+struct randomresult
+{
+    opaque data<>;
+    unsigned long result;
+};
+
+typedef opaque data<>;
 
 program PKCSPROG {
-        version PKCSVERS {
-                void                PKCSPROC_NULL(void)                                                          =  0;
-                ck_rv_t             PKCSPROC_INITIALIZE(reserved init_args)                                      =  1;
-                ck_rv_t             PKCSPROC_FINALIZE(reserved reserved)                                         =  2;
-                struct ck_info      PKCSPROC_GETINFO()                                                           =  3;
-                slotlist            PKCSPROC_GETSLOTLIST(unsigned char token_present)                            =  5;
-                slotinfo            PKCSPROC_GETSLOTINFO(ck_slot_id_t slot_id)                                   =  6;
-                tokeninfo           PKCSPROC_GETTOKENINFO(ck_slot_id_t slot_id)                                  =  7;
-                slotevent           PKCSPROC_WAITFORSLOTEVENT(ck_flags_t flags, reserved)                        =  8;
-                mechlist            PKCSPROC_GETMECHANISMLIST(ck_slot_id_t slot_id)                              =  9;
-                mechinfo            PKCSPROC_GETMECHANISMINFO(ck_slot_id_t slot_id, ck_mechanism_type_t type)    = 10;
-                ck_rv_t             PKCSPROC_INITTOKEN(ck_slot_id_t slot_id, buffer pin, string label)           = 11;
-                ck_rv_t             PKCSPROC_INITPIN(ck_session_handle_t session, buffer pin)                    = 12;
-                ck_rv_t             PKCSPROC_SETPIN(ck_session_handle_t session, buffer old_pin, buffer new_pin) = 13;
-                sessionresult       PKCSPROC_OPENSESSION(ck_slot_id_t slot_id, ck_flags_t flags)                 = 14;
-                ck_rv_t             PKCSPROC_CLOSESESSION(ck_session_handle_t session)                           = 15;
-                ck_rv_t             PKCSPROC_CLOSEALLSESSIONS(ck_slot_id_t slot_id)                              = 16;
-                sessioninfo         PKCSPROC_GETSESSIONINFO(ck_session_handle_t session)                         = 17;
-
-#ifdef NOTDEFINED
-GetOperationState(ck_session_handle_t session, unsigned char *operation_state, unsigned long *operation_state_len) = 18;
-SetOperationState(ck_session_handle_t session, unsigned char *operation_state, unsigned long operation_state_len, ck_object_handle_t encryption_key, ck_object_handle_t authentiation_key) = 19;
-Login(ck_session_handle_t session, ck_user_type_t user_type, unsigned char *pin, unsigned long pin_len) = 20;
-Logout(ck_session_handle_t session) = 21;
-CreateObject(ck_session_handle_t session, struct ck_attribute *templ, unsigned long count, ck_object_handle_t *object) = 22;
-CopyObject(ck_session_handle_t session, ck_object_handle_t object, struct ck_attribute *templ, unsigned long count, ck_object_handle_t *new_object) = 23;
-DestroyObject(ck_session_handle_t session, ck_object_handle_t object) = 24;
-GetObjectSize(ck_session_handle_t session, ck_object_handle_t object, unsigned long *size) = 25;
-GetAttributeValue(ck_session_handle_t session, ck_object_handle_t object, struct ck_attribute *templ, unsigned long count) = 26;
-SetAttributeValue(ck_session_handle_t session, ck_object_handle_t object, struct ck_attribute *templ, unsigned long count) = 27;
-FindObjectsInit(ck_session_handle_t session, struct ck_attribute *templ, unsigned long count) = 28;
-FindObjects(ck_session_handle_t session, ck_object_handle_t *object, unsigned long max_object_count, unsigned long *object_count) = 29;
-FindObjectsFinal(ck_session_handle_t session) = 30;
-EncryptInit(ck_session_handle_t session, struct ck_mechanism *mechanism, ck_object_handle_t key) = 31;
-Encrypt(ck_session_handle_t session, unsigned char *data, unsigned long data_len, unsigned char *encrypted_data, unsigned long *encrypted_data_len) = 32;
-EncryptUpdate(ck_session_handle_t session, unsigned char *part, unsigned long part_len, unsigned char *encrypted_part, unsigned long *encrypted_part_len) = 33;
-EncryptFinal(ck_session_handle_t session, unsigned char *last_encrypted_part, unsigned long *last_encrypted_part_len) = 34;
-DecryptInit(ck_session_handle_t session, struct ck_mechanism *mechanism, ck_object_handle_t key) = 35;
-Decrypt(ck_session_handle_t session, unsigned char *encrypted_data, unsigned long encrypted_data_len, unsigned char *data, unsigned long *data_len) = 36;
-DecryptUpdate(ck_session_handle_t session, unsigned char *encrypted_part, unsigned long encrypted_part_len, unsigned char *part, unsigned long *part_len) = 37;
-DecryptFinal(ck_session_handle_t session, unsigned char *last_part, unsigned long *last_part_len) = 38;
-DigestInit(ck_session_handle_t session, struct ck_mechanism *mechanism) = 39;
-Digest(ck_session_handle_t session, unsigned char *data, unsigned long data_len, unsigned char *digest, unsigned long *digest_len) = 40;
-DigestUpdate(ck_session_handle_t session, unsigned char *part, unsigned long part_len) = 41;
-DigestKey(ck_session_handle_t session, ck_object_handle_t key) = 42;
-DigestFinal(ck_session_handle_t session, unsigned char *digest, unsigned long *digest_len) = 43;
-SignInit(ck_session_handle_t session, struct ck_mechanism *mechanism, ck_object_handle_t key) = 44;
-Sign(ck_session_handle_t session, unsigned char *data, unsigned long data_len, unsigned char *signature, unsigned long *signature_len) = 45;
-SignUpdate(ck_session_handle_t session, unsigned char *part, unsigned long part_len) = 46;
-SignFinal(ck_session_handle_t session, unsigned char *signature, unsigned long *signature_len) = 47;
-SignRecoverInit(ck_session_handle_t session, struct ck_mechanism *mechanism, ck_object_handle_t key) = 48;
-SignRecover(ck_session_handle_t session, unsigned char *data, unsigned long data_len, unsigned char *signature, unsigned long *signature_len) = 49;
-VerifyInit(ck_session_handle_t session, struct ck_mechanism *mechanism, ck_object_handle_t key) = 50;
-Verify(ck_session_handle_t session, unsigned char *data, unsigned long data_len, unsigned char *signature, unsigned long signature_len) = 51;
-VerifyUpdate(ck_session_handle_t session, unsigned char *part, unsigned long part_len) = 52;
-VerifyFinal(ck_session_handle_t session, unsigned char *signature, unsigned long signature_len) = 53;
-VerifyRecoverInit(ck_session_handle_t session, struct ck_mechanism *mechanism, ck_object_handle_t key) = 54;
-VerifyRecover(ck_session_handle_t session, unsigned char *signature, unsigned long signature_len, unsigned char *data, unsigned long *data_len) = 55;
-DigestEncryptUpdate(ck_session_handle_t session, unsigned char *part, unsigned long part_len, unsigned char *encrypted_part, unsigned long *encrypted_part_len) = 56;
-DecryptDigestUpdate(ck_session_handle_t session, unsigned char *encrypted_part, unsigned long encrypted_part_len, unsigned char *part, unsigned long *part_len) = 57;
-SignEncryptUpdate(ck_session_handle_t session, unsigned char *part, unsigned long part_len, unsigned char *encrypted_part, unsigned long *encrypted_part_len) = 58;
-DecryptVerifyUpdate(ck_session_handle_t session, unsigned char *encrypted_part, unsigned long encrypted_part_len, unsigned char *part, unsigned long *part_len) = 59;
-GenerateKey(ck_session_handle_t session, struct ck_mechanism *mechanism, struct ck_attribute *templ, unsigned long count, ck_object_handle_t *key) = 60;
-GenerateKeyPair(ck_session_handle_t session, struct ck_mechanism *mechanism, struct ck_attribute *public_key_template, unsigned long public_key_attribute_count, struct ck_attribute *private_key_template, unsigned long private_key_attribute_count, ck_object_handle_t *public_key, ck_object_handle_t *private_key) = 61;
-WrapKey(ck_session_handle_t session, struct ck_mechanism *mechanism, ck_object_handle_t wrapping_key, ck_object_handle_t key, unsigned char *wrapped_key, unsigned long *wrapped_key_len) = 62;
-UnwrapKey(ck_session_handle_t session, struct ck_mechanism *mechanism, ck_object_handle_t unwrapping_key, unsigned char *wrapped_key, unsigned long wrapped_key_len, struct ck_attribute *templ, unsigned long attribute_count, ck_object_handle_t *key) = 63;
-DeriveKey(ck_session_handle_t session, struct ck_mechanism *mechanism, ck_object_handle_t base_key, struct ck_attribute *templ, unsigned long attribute_count, ck_object_handle_t *key) = 64;
-SeedRandom(ck_session_handle_t session, unsigned char *seed, unsigned long seed_len) = 65;
-GenerateRandom(ck_session_handle_t session, unsigned char *random_data, unsigned long random_len) = 66;
-GetFunctionStatus(ck_session_handle_t session) = 67;
-CancelFunction(ck_session_handle_t session) = 68;
-#endif
-        } = 1;
+	version PKCSVERS {
+		void                PKCSPROC_NULL(void)                                                          =  0;
+		unsigned long       PKCSPROC_INITIALIZE()                                                        =  1;
+		unsigned long       PKCSPROC_FINALIZE()                                                          =  2;
+		info                PKCSPROC_GETINFO()                                                           =  3;
+		slotlist            PKCSPROC_GETSLOTLIST(unsigned char token_present, unsigned long maxcount)    =  5;
+		slot_info           PKCSPROC_GETSLOTINFO(unsigned long slot_id)                                  =  6;
+		token_info          PKCSPROC_GETTOKENINFO(unsigned long slot_id)                                 =  7;
+		sessionresult       PKCSPROC_OPENSESSION(unsigned long slot_id, unsigned long flags)             = 14;
+		unsigned long       PKCSPROC_CLOSESESSION(unsigned long session)                                 = 15;
+		session_info        PKCSPROC_GETSESSIONINFO(unsigned long session)                               = 17;
+		unsigned long       PKCSPROC_LOGIN(unsigned long session, unsigned long user_type, data pin) = 20;
+		unsigned long       PKCSPROC_LOGOUT(unsigned long session) = 21;
+		unsigned long       PKCSPROC_DESTROYOBJECT(unsigned long session, unsigned long object) = 24;
+		attributesresult    PKCSPROC_GETATTRIBUTEVALUE(unsigned long session, unsigned long object, attributes template) = 26;
+		unsigned long       PKCSPROC_FINDOBJECTSINIT(unsigned long session, attributes template) = 28;
+		objectsresult       PKCSPROC_FINDOBJECTS(unsigned long session, unsigned long maxcount) = 29;
+		unsigned long       PKCSPROC_FINDOBJECTSFINAL(unsigned long session) = 30;
+		unsigned long       PKCSPROC_DIGESTINIT(unsigned long session, mechanism mechanism) = 39;
+		dataresult          PKCSPROC_DIGEST(unsigned long session, data plain, unsigned long digest_len) = 40;
+		unsigned long       PKCSPROC_SIGNINIT(unsigned long session, mechanism mechanism, unsigned long key) = 44;
+		dataresult          PKCSPROC_SIGN(unsigned long session, data plain, unsigned long signature_len) = 45;
+		keyresult           PKCSPROC_GENERATEKEY(unsigned long session, mechanism mechanism, attributes template) = 60;
+		keypairresult       PKCSPROC_GENERATEKEYPAIR(unsigned long session, mechanism mechanism, attributes public_key_template, attributes private_key_template) = 61;
+		unsigned long       PKCSPROC_SEEDRANDOM(unsigned long session, data seed) = 65;
+		randomresult        PKCSPROC_GENERATERANDOM(unsigned long session, unsigned long length) = 66;
+	} = 1;
 } = 200492;
