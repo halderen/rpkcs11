@@ -37,8 +37,8 @@ pkcsproc_getinfo_1_svc(info *result, struct svc_req *rqstp)
 bool_t
 pkcsproc_getslotlist_1_svc(u_char token_present, unsigned long maxcount, slotlist *result, struct svc_req *rqstp)
 {
-    result->slots.slots_len = sizeof(unsigned long)*maxcount;
-    result->slots.slots_val = malloc(result->slots.slots_len);
+    result->slots.slots_len = maxcount;
+    result->slots.slots_val = malloc(sizeof(unsigned long) * result->slots.slots_len);
     result->actualcount = maxcount;
     if(maxcount == 0) {
         result->result = local->C_GetSlotList(token_present, NULL, &result->actualcount);
@@ -123,8 +123,8 @@ pkcsproc_findobjectsinit_1_svc(u_long session, attributes attrs, u_long *result,
 bool_t
 pkcsproc_findobjects_1_svc(u_long session, u_long maxcount, objectsresult *result,  struct svc_req *rqstp)
 {
-    result->objects.objects_len = sizeof(unsigned long) * maxcount;
-    result->objects.objects_val = malloc(result->objects.objects_len);
+    result->objects.objects_len = maxcount;
+    result->objects.objects_val = malloc(sizeof(unsigned long) * result->objects.objects_len);
     result->result = local->C_FindObjects(session, result->objects.objects_val, maxcount, &result->actualcount);
     return TRUE;
 }
@@ -153,7 +153,7 @@ pkcsproc_digest_1_svc(u_long session, data plain, u_long digest_len, dataresult 
     result->data.data_len = digest_len;
     result->data.data_val = malloc(result->data.data_len);
     result->actuallen     = digest_len;
-    result->result = local->C_Digest(session, (unsigned char*)plain.data_val, (unsigned long)plain.data_val, (unsigned char*) result->data.data_val, &result->actuallen);
+    result->result = local->C_Digest(session, (unsigned char*)plain.data_val, (unsigned long)plain.data_len, (unsigned char*) result->data.data_val, &result->actuallen);
     return TRUE;
 }
 
@@ -174,7 +174,7 @@ pkcsproc_sign_1_svc(u_long session, data plain, u_long signature_len, dataresult
     result->data.data_len = signature_len;
     result->data.data_val = malloc(result->data.data_len);
     result->actuallen     = signature_len;
-    result->result = local->C_Sign(session, (unsigned char*)plain.data_val, (unsigned long)plain.data_val,
+    result->result = local->C_Sign(session, (unsigned char*)plain.data_val, (unsigned long)plain.data_len,
             (unsigned char*)result->data.data_val, &result->actuallen);
     return TRUE;
 }

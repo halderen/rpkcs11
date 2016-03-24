@@ -9,8 +9,3 @@ pkcs11_clnt.c
 pkcs11_svc.c
 pkcs11_xdr.c
 pkcs11_xdr.h
-doorrpc.h
-doorrpc_clnt.c
-doorrpc_svc.c
-doorrpc_xdr.c
-doorrpc_xdr.h

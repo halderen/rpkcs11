@@ -2,7 +2,7 @@
 .PHONY: all clean
 
 CPPFLAGS += -D_REENTRANT
-CFLAGS += -g -Wall -Wno-unused-variable -fPIC
+CFLAGS += -g -Wall -Wno-unused-variable -fPIC -DDEBUG
 LDLIBS += -lnsl -lpthread -ldl
 
 all: pkcs11tool pkcs11server libpkcs11rpc.so
