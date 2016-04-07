@@ -5,7 +5,7 @@ CPPFLAGS += -D_REENTRANT
 CFLAGS += -g -Wall -Wno-unused-variable -fPIC -DDEBUG
 LDLIBS += -lnsl -lpthread -ldl
 
-all: pkcs11tool pkcs11server libpkcs11rpc.so
+all: pkcs11tool pkcs11issuetest pkcs11server libpkcs11rpc.so
 
 clean:
 	rm -f core pkcs11.h *.o *.so pkcs11server pkcs11tool *~
@@ -27,6 +27,9 @@ pkcs11server:		pkcs11_svc.o pkcs11_xdr.o rpcserver.o server.o
 	$(LINK.c) -o $@ $^ $(LDLIBS)
 
 pkcs11tool: pkcs11tool.c pkcs11.h
+	$(LINK.c) -o $@ $^ $(LDLIBS)
+
+pkcs11issuetest: pkcs11issuetest.c pkcs11.h
 	$(LINK.c) -o $@ $^ $(LDLIBS)
 
 libpkcs11rpc.so:	pkcs11_clnt.o pkcs11_xdr.o rpclibrary.o
