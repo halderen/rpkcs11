@@ -146,7 +146,8 @@ GetSessionInfo(CK_SESSION_HANDLE session, CK_SESSION_INFO *info)
 }
 
 static CK_RV
-Login(CK_SESSION_HANDLE session, unsigned long user_type, unsigned char *pin, unsigned long pin_len) {
+Login(CK_SESSION_HANDLE session, unsigned long user_type, unsigned char *pin, unsigned long pin_len)
+{
     enum clnt_stat retval;
     CK_RV result;
     data credentials;
@@ -161,7 +162,8 @@ Login(CK_SESSION_HANDLE session, unsigned long user_type, unsigned char *pin, un
 }
 
 static CK_RV
-Logout(CK_SESSION_HANDLE session) {
+Logout(CK_SESSION_HANDLE session)
+{
     enum clnt_stat retval;
     CK_RV result;
     if ((retval = pkcsproc_logout_1(session, &result, getclient())) == RPC_SUCCESS) {
@@ -171,7 +173,8 @@ Logout(CK_SESSION_HANDLE session) {
 }
 
 static CK_RV
-DestroyObject(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE object) {
+DestroyObject(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE object)
+{
     enum clnt_stat retval;
     CK_RV result;
     if ((retval = pkcsproc_destroyobject_1(session, object, &result, getclient())) == RPC_SUCCESS) {
@@ -181,7 +184,8 @@ DestroyObject(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE object) {
 }
 
 static CK_RV
-GetAttributeValue(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE object, CK_ATTRIBUTE* templ, unsigned long count) {
+GetAttributeValue(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE object, CK_ATTRIBUTE* templ, unsigned long count)
+{
     enum clnt_stat retval;
     attributesresult result;
     attributes attrs;
@@ -195,7 +199,8 @@ GetAttributeValue(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE object, CK_ATTRIBU
 }
 
 static CK_RV
-FindObjectsInit(CK_SESSION_HANDLE session, CK_ATTRIBUTE* templ, unsigned long count) {
+FindObjectsInit(CK_SESSION_HANDLE session, CK_ATTRIBUTE* templ, unsigned long count)
+{
     enum clnt_stat retval;
     CK_RV result;
     attributes attrs;
@@ -208,7 +213,8 @@ FindObjectsInit(CK_SESSION_HANDLE session, CK_ATTRIBUTE* templ, unsigned long co
 }
 
 static CK_RV
-FindObjects(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE* object, unsigned long max_object_count, unsigned long *object_count) {
+FindObjects(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE* object, unsigned long max_object_count, unsigned long *object_count)
+{
     enum clnt_stat retval;
     objectsresult result;
     result.objects.objects_val = object;
@@ -221,7 +227,8 @@ FindObjects(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE* object, unsigned long m
 }
 
 static CK_RV
-FindObjectsFinal(CK_SESSION_HANDLE session) {
+FindObjectsFinal(CK_SESSION_HANDLE session)
+{
     enum clnt_stat retval;
     CK_RV result;
     if ((retval = pkcsproc_findobjectsfinal_1(session, &result, getclient())) == RPC_SUCCESS) {
@@ -231,7 +238,8 @@ FindObjectsFinal(CK_SESSION_HANDLE session) {
 }
 
 static CK_RV
-DigestInit(CK_SESSION_HANDLE session, CK_MECHANISM* mechanism_ptr) {
+DigestInit(CK_SESSION_HANDLE session, CK_MECHANISM* mechanism_ptr)
+{
     enum clnt_stat retval;
     CK_RV result;
     mechanism mech;
@@ -245,7 +253,8 @@ DigestInit(CK_SESSION_HANDLE session, CK_MECHANISM* mechanism_ptr) {
 }
 
 static CK_RV
-Digest(CK_SESSION_HANDLE session, unsigned char *data_ptr, unsigned long data_len, unsigned char *digest, unsigned long *digest_len) {
+Digest(CK_SESSION_HANDLE session, unsigned char *data_ptr, unsigned long data_len, unsigned char *digest, unsigned long *digest_len)
+{
     enum clnt_stat retval;
     data plain;
     dataresult result;
@@ -262,7 +271,8 @@ Digest(CK_SESSION_HANDLE session, unsigned char *data_ptr, unsigned long data_le
 }
 
 static CK_RV
-SignInit(CK_SESSION_HANDLE session, CK_MECHANISM* mechanism_ptr, CK_OBJECT_HANDLE key) {
+SignInit(CK_SESSION_HANDLE session, CK_MECHANISM* mechanism_ptr, CK_OBJECT_HANDLE key)
+{
     enum clnt_stat retval;
     CK_RV result;
     mechanism mech;
