@@ -1,5 +1,7 @@
 *~
+*.bak
 nbproject/
+
 *.o
 *.so
 pkcs11server
@@ -9,3 +11,15 @@ pkcs11_clnt.c
 pkcs11_svc.c
 pkcs11_xdr.c
 pkcs11_xdr.h
+
+configure
+config.h
+libtool
+stamp-h1
+*.in
+aclocal.m4
+autom4te.cache
+config.log
+config.status
+.deps
+Makefile
