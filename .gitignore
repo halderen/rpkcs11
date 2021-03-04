@@ -17,9 +17,11 @@ config.h
 libtool
 stamp-h1
 *.in
+*.la
 aclocal.m4
 autom4te.cache
 config.log
 config.status
 .deps
+.libs/
 Makefile
