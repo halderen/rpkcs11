@@ -207,9 +207,10 @@ DestroyObject(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE object)
 static CK_RV
 GetAttributeValue(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE object, CK_ATTRIBUTE* templ, unsigned long count)
 {
+    int i;
     if (trace) {
         fprintf(trace, "GetAttributeValue(,,[");
-        for (int i = 0; i < count; i++) {
+        for (i=0; i<count; i++) {
             switch (templ[i].type) {
                 case CKA_ID:
                     fprintf(trace, "{CKA_ID,,%ld},", templ[i].ulValueLen);
@@ -236,20 +237,20 @@ GetAttributeValue(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE object, CK_ATTRIBU
         }
         fprintf(trace, "],%ld)\n", count);
     }
-    for(int i=0; i<count; i++) {
-        switch(templ[i].type) {
+    for (i=0; i<count; i++) {
+        switch (templ[i].type) {
             case CKA_ID:
             case CKA_KEY_TYPE:
             case CKA_PRIME:
             case CKA_SUBPRIME:
             case CKA_BASE:
             case CKA_VALUE:
-                if(templ[i].pValue != NULL) {
-                    if(templ[i].ulValueLen >= sizeof(unsigned long)) {
-                        *(unsigned long*)templ[i].pValue = 1;
+                if (templ[i].pValue != NULL) {
+                    if (templ[i].ulValueLen >= sizeof (unsigned long)) {
+                        *(unsigned long*) templ[i].pValue = 1;
                     }
                 }
-                templ[i].ulValueLen = sizeof(unsigned long);
+                templ[i].ulValueLen = sizeof (unsigned long);
                 break;
             default:
                 abort();
