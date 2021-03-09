@@ -2,8 +2,6 @@
 *.bak
 nbproject/
 
-*.o
-*.so
 pkcs11server
 pkcs11tool
 pkcs11.h
@@ -12,16 +10,28 @@ pkcs11_svc.c
 pkcs11_xdr.c
 pkcs11_xdr.h
 
+*.in
+*.la
+*.a
+*.o
+*.so
+*.lo
+
 configure
 config.h
 libtool
 stamp-h1
-*.in
-*.la
 aclocal.m4
 autom4te.cache
 config.log
 config.status
-.deps
-.libs/
+config.guess
+config.sub
+compile
+depcomp
+missing
+install-sh
+ltmain.sh
 Makefile
+.deps
+.libs
