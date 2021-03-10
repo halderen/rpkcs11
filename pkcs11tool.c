@@ -1,3 +1,4 @@
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -201,8 +202,7 @@ main(int argc, char *argv[]) {
     assert(getFunctionList);
     status = getFunctionList(&pkcs11);
     assert(!status);
-    status = pkcs11->C_Initialize(NULL);
-    assert(!status || status == CKR_CRYPTOKI_ALREADY_INITIALIZED);
+    CHECK2(pkcs11->C_Initialize(NULL), CKR_CRYPTOKI_ALREADY_INITIALIZED);
     status = pkcs11->C_GetInfo(&info);
     assert(!status);
     printf("GetInfo:\n");
@@ -248,9 +248,8 @@ main(int argc, char *argv[]) {
         printf("    hardware version     : %d.%d\n", tokeninfo.hardwareVersion.major, tokeninfo.hardwareVersion.minor);
         printf("    firmware version     : %d.%d\n", tokeninfo.firmwareVersion.major, tokeninfo.firmwareVersion.minor);
         printf("    utc time             : %.*s\n", (int) sizeof (tokeninfo.utcTime), tokeninfo.utcTime);
-        status = pkcs11->C_OpenSession(slotids[0], CKF_SERIAL_SESSION|CKF_RW_SESSION, NULL, NULL, &session);
-        assert(!status);
-        status = pkcs11->C_GetSessionInfo(session, &sessioninfo);
+        CHECK(pkcs11->C_OpenSession(slotids[0], CKF_SERIAL_SESSION|CKF_RW_SESSION, NULL, NULL, &session));
+        CHECK(pkcs11->C_GetSessionInfo(session, &sessioninfo));
         assert(!status);
         printf("  GetSessionInfo\n");
         printf("    slot                 : %lu\n", sessioninfo.slotID);

@@ -1,6 +1,7 @@
 *~
 *.bak
 nbproject/
+ROOT/
 
 pkcs11server
 pkcs11tool

@@ -1,15 +1,21 @@
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <malloc.h>
 #include <pthread.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "cryptoki_compat/pkcs11.h"
 #include "pkcs11.h"
 
-static pthread_key_t clntkey;
 static CK_FUNCTION_LIST definition;
 static void* Unsupported = NULL;
+
+static pthread_key_t clntkey;
+static CLIENT* globalclnt = NULL;
+static int globalfd;
 
 static void
 destroyclient(void* ptr)
@@ -22,6 +28,8 @@ static CLIENT*
 getclient()
 {
     CLIENT* clnt;
+    if (globalclnt)
+        return globalclnt;
     if ((clnt = pthread_getspecific(clntkey)) == NULL) {
         clnt = clnt_create("localhost", PKCSPROG, PKCSVERS, "udp");
         pthread_setspecific(clntkey, clnt);
@@ -461,6 +469,40 @@ C_GetFunctionList(CK_FUNCTION_LIST_PTR_PTR function_list)
     return GetFunctionList(function_list);
 }
 
+
+int socketfork(char* hostname) {
+    int len;
+    int fd[2];
+    pid_t pid;
+    char* program;
+    char* args[5];
+
+    len = snprintf(NULL, 0, "%s/pkcs11server", BINDIR);
+    program = malloc(len+1);
+    snprintf(program, len+1, "%s/pkcs11server", BINDIR);
+    args[0] = "ssh";
+    args[1] = "-T";
+    args[2] = hostname;
+    args[3] = program;
+    args[4] = NULL;
+
+    socketpair(PF_LOCAL, SOCK_STREAM, 0, fd);
+    pid = fork();
+    if (pid == 0) {
+        close(0);
+        close(1);
+        close(fd[0]);
+        dup2(fd[1], 0);
+        dup2(fd[1], 1);
+        close(fd[1]);
+        execvp("ssh", args);
+        abort();
+    } else {
+        close(fd[1]);
+        return fd[0];
+    }
+}
+
 __attribute__((constructor))
 void
 init(void)
@@ -469,9 +511,20 @@ init(void)
     void *result;
     CLIENT* clnt;
 
-    clnt = clnt_create("localhost", PKCSPROG, PKCSVERS, "udp");
+    if (PKCS11_HOST && strlen(PKCS11_HOST) > 0) {
+        globalfd = socketfork(PKCS11_HOST);
+        struct sockaddr_un sockaddr;
+        sockaddr.sun_family = AF_LOCAL;
+        strcpy(sockaddr.sun_path,"");
+        struct netbuf svcaddr;
+        svcaddr.buf = &sockaddr;
+        svcaddr.maxlen = svcaddr.len = sizeof(sockaddr);
+        globalclnt = clnt = clnt_tli_create(globalfd, NULL, &svcaddr, PKCSPROG, PKCSVERS, 8800, 8800);
+    } else {
+        clnt = clnt_create(PKCS11_HOST, PKCSPROG, PKCSVERS, "udp");
+    }
     if (clnt == NULL) {
-        clnt_pcreateerror("localhost");
+        clnt_pcreateerror(PKCS11_HOST);
         exit(1);
     }
 
@@ -488,4 +541,5 @@ __attribute__((destructor))
 void
 fini(void)
 {
+    close(globalfd);
 }
