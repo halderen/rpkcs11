@@ -13,7 +13,7 @@ ACLOCAL_AMFLAGS = -Im4
 AM_CFLAGS   = -DSYSCONFDIR=@sysconfdir@ -I/usr/include/tirpc
 AM_CFLAGS  += -g -Wall -Wno-unused-variable
 
-bin_PROGRAMS = pkcs11server pkcs11tool
+bin_PROGRAMS = pkcs11server pkcs11tool pkcs11test
 lib_LTLIBRARIES = libpkcs11rpc.la libpkcs11null.la
 noinst_LIBRARIES = libpkcs11common.a
 
@@ -26,6 +26,9 @@ pkcs11server_LDADD   = libpkcs11common.a -lnsl -ltirpc -lpthread -ldl
 
 pkcs11tool_SOURCES   = pkcs11.h pkcs11tool.c
 pkcs11tool_LDADD     = -lnsl -ltirpc -lpthread -ldl
+
+pkcs11test_SOURCES   = pkcs11.h pkcs11test.c
+pkcs11test_LDADD     = -lnsl -ltirpc -lpthread -ldl
 
 libpkcs11common_a_SOURCES = pkcs11_xdr.c
 libpkcs11common_a_CFLAGS = $(AM_CFLAGS) -fPIC

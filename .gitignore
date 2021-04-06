@@ -5,6 +5,7 @@ ROOT/
 
 pkcs11server
 pkcs11tool
+pkcs11test
 pkcs11.h
 pkcs11_clnt.c
 pkcs11_svc.c
