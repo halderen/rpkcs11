@@ -7,7 +7,6 @@
 #include <assert.h>
 #include <dlfcn.h>
 #include "cryptoki_compat/pkcs11.h"
-#include "pkcs11.h"
 
 #define CHECK(OP) do { CK_RV CHECK_status; if((CHECK_status=(OP)) != CKR_OK) { \
   fprintf(stderr,"operation %s on %s:%d failed: %s (%ld)\n",#OP,__FILE__,__LINE__,err2str(CHECK_status),CHECK_status); abort(); } } while(0)

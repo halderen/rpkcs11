@@ -8,7 +8,6 @@
 #include <dlfcn.h>
 #include <errno.h>
 #include "cryptoki_compat/pkcs11.h"
-#include "pkcs11.h"
 
 #define CHECKSYS(OP) do { int CHECK_status; if((CHECK_status=(OP)) != CKR_OK) { int CHECK_errno = errno; \
   fprintf(stderr,"operation %s on %s:%d failed: %d %s (%d)\n",#OP,__FILE__,__LINE__,CHECK_status,strerror(CHECK_errno),CHECK_errno); abort(); } } while(0)

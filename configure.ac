@@ -3,7 +3,7 @@ AC_INIT([rpkcs11], [0.1-dev], [http://github.org/halderen/rpkcs11/])
 AC_CANONICAL_TARGET
 AC_CONFIG_MACRO_DIR([m4])
 AC_USE_SYSTEM_EXTENSIONS
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 LT_INIT
 dnl AC_CONFIG_SRCDIR([server.c])
 AC_CONFIG_HEADERS([config.h])
