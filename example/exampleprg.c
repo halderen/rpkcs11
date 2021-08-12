@@ -1,8 +1,43 @@
+/*
+ * Copyright (c) 2021, NLnet Labs
+ * Copyright (c) 2021, A.W. van Halderen
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
+ */
+#include "config.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include <pthread.h>
 #include <errno.h>
+#include <syslog.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <assert.h>
+#include <netdb.h>
 #include "myapplication.h"
 #include "mytransport.h"
 
@@ -49,18 +84,34 @@ connectinternal(int serverthreads)
 }
 #endif
 
+#if (!defined(NOMODE) && MODE < 3)
+int
+connectdummy(void)
+{
+    mydirectclient();
+    return 0;
+}
+#endif
+
 static void
 connectcommand(char* argv0full)
 {
     int fds1[2];
     int fds2[2];
     pid_t pid;
-    char* args[4];
+    char* args[25];
+    int argscnt = 0;
 
-    args[0] = "/usr/bin/ssh";
-    args[1] = "berry@trade";
-    args[2] = "/home/berry/server";
-    args[3] = NULL;
+    args[argscnt++] = "/usr/bin/ssh";
+    //args[argscnt++] = "-T";
+    //args[argscnt++] = "-c";
+    //args[argscnt++] = "aes128-ctr";
+    //args[argscnt++] = "-x";
+    //args[argscnt++] = "-o";
+    //args[argscnt++] = "Compression=no";
+    args[argscnt++] = "berry@fire";
+    args[argscnt++] = "/home/berry/server";
+    args[argscnt++] = NULL;
 
     socketpair(PF_LOCAL, SOCK_STREAM, 0, fds1);
     socketpair(PF_LOCAL, SOCK_STREAM, 0, fds2);
@@ -72,7 +123,8 @@ connectcommand(char* argv0full)
         dup2(fds2[1], 1);
         close(fds1[1]);
         close(fds2[1]);
-        execvp("/usr/bin/ssh", args);
+        execvp(args[0], args);
+        fprintf(stderr,"Failed %s (%d)\n",strerror(errno),errno);
         abort();
     } else {
         close(fds1[1]);
@@ -81,7 +133,7 @@ connectcommand(char* argv0full)
     }
 }
 
-static void
+void
 connectremote(char* argv0full)
 {
     int fds1[2];
@@ -111,6 +163,91 @@ connectremote(char* argv0full)
     }
 }
 
+#define CHECKSYS(OP) do { int CHECK_status; if((CHECK_status=(OP)) != 0) { int CHECK_errno = errno; \
+  fprintf(stderr,"operation %s on %s:%d failed: %d %s (%d)\n",#OP,__FILE__,__LINE__,CHECK_status,strerror(CHECK_errno),CHECK_errno); abort(); } } while(0)
+
+void
+serverlistenfifo(void)
+{
+    int sfd, cfd;
+    socklen_t addrsize;
+    struct sockaddr_un myaddr, peeraddr;
+    sfd = socket(AF_UNIX, SOCK_STREAM, 0);
+    memset(&myaddr, 0, sizeof (myaddr));
+    myaddr.sun_family = AF_UNIX;
+    strncpy(myaddr.sun_path, "/tmp/server.sock", sizeof (myaddr.sun_path)-1);
+    CHECKSYS(bind(sfd, (struct sockaddr *)&myaddr, sizeof (myaddr)));
+    assert(listen(sfd, 5)==0);
+    addrsize = sizeof (peeraddr);
+    cfd = accept(sfd, (struct sockaddr *)&peeraddr, &addrsize);
+    assert(cfd>=0);
+    //close(sfd);
+    dup2(cfd, 0);
+    dup2(cfd, 1);
+    //close(cfd);
+}
+
+void
+serverlistensocket(void)
+{
+    int sfd, cfd;
+    socklen_t addrsize;
+    struct sockaddr_in myaddr, peeraddr;
+    sfd = socket(AF_INET, SOCK_STREAM, 0);
+    myaddr.sin_family = AF_INET;
+    myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    myaddr.sin_port = htons(7777);
+    int optval = 1;
+    setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof (optval));
+    CHECKSYS(bind(sfd, (struct sockaddr *)&myaddr, sizeof (myaddr)));
+    assert(listen(sfd, 5)==0);
+    addrsize = sizeof (peeraddr);
+    cfd = accept(sfd, (struct sockaddr *)&peeraddr, &addrsize);
+    assert(cfd>=0);
+    setsockopt(cfd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof (optval));
+    //close(sfd);
+    dup2(cfd, 0);
+    dup2(cfd, 1);
+    //close(cfd);
+}
+
+void
+connectfifo(void)
+{
+    int fd;
+    socklen_t addrsize;
+    int optval = 1;
+    int optlen = sizeof (optval);
+    struct sockaddr_un addr;
+    fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    memset(&addr, 0, sizeof (addr));
+    addr.sun_family = AF_UNIX;
+    strncpy(addr.sun_path, "/tmp/server.sock", sizeof (addr.sun_path)-1);
+    assert(connect(fd, (struct sockaddr *)&addr, sizeof (addr))==0);
+    myclient(fd, fd);
+}
+
+void
+connectsocket(void)
+{
+    int fd;
+    socklen_t addrsize;
+    int optval = 1;
+    int optlen = sizeof (optval);
+    struct sockaddr_in addr;
+    struct hostent* h;
+    h = gethostbyname("fire.halderen.net");
+    assert(h);
+    fd = socket(AF_INET, SOCK_STREAM, 0);
+    assert(fd>0);
+    addr.sin_family = AF_INET;
+    addr.sin_addr = *((struct in_addr *)h->h_addr);
+    addr.sin_port = htons(7777);
+    //assert(setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) == 0);
+    setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof (optval));
+    assert(connect(fd, (struct sockaddr *)&addr, sizeof (addr))==0);
+    myclient(fd, fd);
+}
 
 static void*
 test(void* data)
@@ -137,7 +274,9 @@ test(void* data)
  * MODE=1 indirect call without XDR routines
  * MODE=2 indirect call with XDR routines
  * MODE=3 internal running server
- * MODE=4 run as external running server
+ * MODE=4 run as external running server with ssh channel
+ * MODE=5 run as external running server externally started with unix fifo
+ * MODE=6 run as external running server externally started with sockets
  */
 
 extern char* argv0;
@@ -212,18 +351,31 @@ main(int argc, char* argv[])
     pthread_t* threads;
 
     programsetup(argv[0]);
-    
+
 #if (defined(MODE) && !defined(NOMODE))
-#if (MODE == 3)
+#if (MODE == 1 || MODE == 2)
+    connectdummy();
+#elif (MODE == 3)
     connectinternal(4);
 #endif
 #if (MODE > 3)
     if(!strcmp(argv0, "server")) {
-        myserver(0, 1, 4);
-        abort();
+#if (MODE == 5)
+        serverlistenfifo();
+#elif (MODE == 6)
+        serverlistensocket();
+#endif
+        myserver(0, 1, 32);
+        exit(0);
     } else {
+#if (MODE == 4)
         connectcommand(argv0path);
-    }
+#elif (MODE == 5)
+        connectfifo();
+#elif (MODE == 6)
+        connectsocket();
+#endif
+   }
 #endif
 #else
     connectcommand(argv0path);
@@ -241,6 +393,8 @@ main(int argc, char* argv[])
     for(int i=0; i<nthreads; i++) {
         pthread_join(threads[i], &dummy);
     }
-fprintf(stderr,"DONE\n");
+    free(threads);
+    myclose();
+    programteardown();
     return 0;
 }

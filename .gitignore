@@ -1,12 +1,13 @@
 *~
 *.bak
-nbproject/
+nbproject/private/
 *.dirstamp
 ROOT/
 
 pkcs11server
 pkcs11tool
 pkcs11test
+exampletst
 
 *.in
 *.la

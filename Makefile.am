@@ -51,11 +51,4 @@ pkcs11tool_LDADD     = -lnsl -lpthread -ldl
 pkcs11test_SOURCES   = pkcs11/pkcs11test.c
 pkcs11test_LDADD     = -lnsl -lpthread -ldl
 
-# libpkcs11common_a_SOURCES = pkcs11_xdr.c
-# libpkcs11common_a_CFLAGS = $(AM_CFLAGS) -fPIC
-
 libpkcs11null_la_SOURCES = pkcs11/nulllibrary.c
-# libpkcs11null_la_LIBADD  = libpkcs11common.a
-
-#clean-local:
-#	rm -f pkcs11.h pkcs11_clnt.c pkcs11_svc.c pkcs11_xdr.c pkcs11_xdr.h
